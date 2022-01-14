@@ -9,6 +9,9 @@ class ExampleController extends Controller
 {
     public function create(Request $request)
     {
+
+
+        //deneme
         $rules = [
             'title' => 'required|string',
             'category_id' => 'required|integer',
