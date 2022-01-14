@@ -2,18 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Traits\APIMessage;
 use Illuminate\Http\Request;
 use App\Models\Movie;
 use Illuminate\Support\Facades\Validator;
 
 class MovieController extends Controller
 {
+    use APIMessage;
 
     public function read(){
-        return Movie::all()->where('removed','N');
+        $result = Movie::all()->toArray();
+        return $this->APIMessage('R',$result,'Filmler');
     }
-
-
 
     public function create(Request $request)
     {
@@ -23,75 +24,52 @@ class MovieController extends Controller
         $validator = Validator::make($request->all(), $rules);
         if($validator->fails())
         {
-            return response()->json([
-                'code' => 400,
-                'message' => 'Lütfen formu eksiksiz doldurun.',
-                'result' => $validator->errors()->messages()
-            ]);
+            return $this->APIMessage('E',$validator->errors()->messages());
         }else{
             $movie = new Movie();
             $result = $movie::create([
                 'title' => $request->title
             ]);
-
-            if($result)
-            {
-                return response()->json([
-                    'code' => 200,
-                    'message' => [
-                        'route_name' => $request->route()->getName(),
-                        'code' => 200
-                    ],
-                    'result' => $result
-                ]);
-            }else{
-                return response()->json([
-                    'code' => 400,
-                    'message' => [
-                        'route_name' => $request->route()->getName(),
-                        'code' => 400
-                    ]
-                ]);
-            }
+            return $this->APIMessage('C',$result,'Film');
         }
     }
 
-    public function update(Request $request, $id)
-    {
-        $result = Movie::where('id', $id)->update(['title' => $request->title]);
-        return response()->json([
-            'code' => $result ? '200' : '400',
-            'message' => [
-                'route_name' => $request->route()->getName(),
-                'code' => $result ? '200' : '400',
-            ],
-        ]);
-    }
-
-
-    public function delete(Request $request,$id)
+    public function delete($id)
     {
         $result = Movie::where('id', $id)->update([
             'removed' => 'Y'
         ]);
-        return response()->json([
-            'code' => $result  ? '200' : '400',
-            'message' => $result
-                ? 'Başarılı'
-                : 'Başarısız',
-        ],$result  ? '200' : '400');
+        return $this->APIMessage('D',$result,'Film');
     }
 
-    public function show(Request $request,$id)
+    public function update(Request $request, $id)
     {
-        $result = Movie::where('id', $id)->get();
-        return response()->json([
-            'code' => $result->count() ? '200' : '400',
-            'message' => [
-                'result' => $result->count() ? $result : 'Görüntülenecek veri bulunmamaktadır.',
-                'route_name' => $request->route()->getName(),
-                'code' => $result->count() ? '200' : '400',
-            ],
-        ]);
+        $rules = [
+            'title' => 'nullable|string',
+            'location' => 'nullable|string'
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if($validator->fails())
+        {
+            return $this->APIMessage('E',$validator->errors()->messages());
+
+        }else{
+            $result = Movie::find($id);
+
+            if (!is_null($result)){
+                $result->title = $request->get('title') ? $request->get('title')  : $result->title;
+                $result->save();
+            }
+
+            return $this->APIMessage('U',$result,'Film');
+        }
+    }
+
+    public function show($id)
+    {
+        $result = Movie::where('id', $id)->where('removed','N')->get()->toArray();
+        return $this->APIMessage('R',$result,'Film');
     }
 }

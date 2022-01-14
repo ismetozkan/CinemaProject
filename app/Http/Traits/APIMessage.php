@@ -1,15 +1,16 @@
 <?php
 
 namespace App\Http\Traits;
-use Dflydev\DotAccessData\Data;
 use Illuminate\Http\Response;
 
 trait APIMessage
 {
     public function APIMessage(string $type,$value, string $message = null){//$result = null,$errors = null
+        $code = $value ? 200 : 400;
         switch ($type){
             case 'E':
-                $error = $value;
+                $asd = $value;
+                $code = 400;
                 $message = "Lütfen formu eksiksiz bir şekilde doldurunuz.";
                 break;
             case 'C':
@@ -32,28 +33,26 @@ trait APIMessage
                     $message . " görüntüleme işleminiz başarıyla gerçekleştirilmiştir." :
                     "Görüntülenecek veri bulunamadı.";
                 break;
+            default:
+                $message = "Hatalı parametre APIMEssage";
+                break;
         }
 
-        if($type == 'E'){
-            return response()->json([
-                'code' => 400,
-                'message' => "Lütfen formu eksiksiz bir şekilde doldurunuz.",
-                'error' => $value
-            ],Response::HTTP_BAD_REQUEST);
-        }
-
-        $code = $value ? 200 : 400;
-
-        return $value ? response()->json([
+        $json = [
             'code' => $code,
-            'message' => $message,
-            ($type != 'U' && $type != 'D') ?  :'result' => $value,
-            $error == null ? : 'error' => $error
-        ],Response::HTTP_OK) :
-            response()->json([
-                'code' => $code,
-                'message' => $message
-            ],Response::HTTP_BAD_REQUEST);
+            'message' => $message
+        ];
+
+        if(isset($asd)){
+            $json['error'] = $value;
+        }elseif($type == 'R' ||$type == 'U' && $value != null){
+            $json['result'] = $value;
+        }
+
+        return $value ? response()->json(
+            $json,Response::HTTP_OK) :
+            response()->json(
+            $json,Response::HTTP_BAD_REQUEST);
 
     }
 }

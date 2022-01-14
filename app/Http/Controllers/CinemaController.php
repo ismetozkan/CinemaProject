@@ -13,7 +13,6 @@ class CinemaController extends Controller
     public function read(){
         $result = Cinema::all()->toArray();
         return $this->APIMessage('R',$result,'Sinema Salonları');
-
     }
 
     public function create(Request $request){
@@ -46,11 +45,31 @@ class CinemaController extends Controller
     }
 
     public function update(Request $request,$id){
-        $result = Cinema::where('id', $id)->update($request->all());
+        $rules = [
+            'title' => 'nullable|string',
+            'location' => 'nullable|string'
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if($validator->fails())
+        {
+            return $this->APIMessage('E',$validator->errors()->messages());
+
+        }else{
+            $result = Cinema::find($id);
+
+            if (!is_null($result)){
+                $result->title = $request->get('title') ? $request->get('title')  : $result->title;
+                $result->location = $request->get('location') ? $request->get('location')  : $result->location;
+                $result->save();
+            }
+
         return $this->APIMessage('U',$result,'Sinema Salonu');
+        }
     }
 
-    public function show(Request $request,$id){
+    public function show($id){
         $result = Cinema::where('id', $id)->where('removed','N')->get()->toArray();
         return $this->APIMessage('R',$result,'Sinema Salonu');
     }
