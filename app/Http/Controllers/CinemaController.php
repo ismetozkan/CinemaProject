@@ -38,10 +38,14 @@ class CinemaController extends Controller
     }
 
     public function delete($id){
-        $result = Cinema::where('id', $id)->update([
-            'removed' => 'Y'
-        ]);
-        return $this->APIMessage('D',$result,'Sinema Salonu');
+        $result = Cinema::find($id);
+
+        if (!is_null($result) && $result->removed == 'N'){
+            $result->removed = 'Y';
+            $result->save();
+            return $this->APIMessage('D',$result,'Sinema Salonu');
+        }
+        return $this->APIMessage('D',null,'Sinema Salonu');
     }
 
     public function update(Request $request,$id){
@@ -59,13 +63,14 @@ class CinemaController extends Controller
         }else{
             $result = Cinema::find($id);
 
-            if (!is_null($result)){
+            if (!is_null($result) && $result->removed == 'N'){
                 $result->title = $request->get('title') ? $request->get('title')  : $result->title;
                 $result->location = $request->get('location') ? $request->get('location')  : $result->location;
                 $result->save();
+                return $this->APIMessage('U',$result,'Sinema Salonu');
             }
 
-        return $this->APIMessage('U',$result,'Sinema Salonu');
+        return $this->APIMessage('U',null,'Sinema Salonu');
         }
     }
 

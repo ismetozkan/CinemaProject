@@ -36,10 +36,15 @@ class MovieController extends Controller
 
     public function delete($id)
     {
-        $result = Movie::where('id', $id)->update([
-            'removed' => 'Y'
-        ]);
-        return $this->APIMessage('D',$result,'Film');
+        $result = Movie::find($id);
+
+        if (!is_null($result) && $result->removed == 'N'){
+            $result->removed = 'Y';
+            $result->save();
+            return $this->APIMessage('D',$result,'Film');
+        }
+
+        return $this->APIMessage('D',null,'Film');
     }
 
     public function update(Request $request, $id)
@@ -50,20 +55,20 @@ class MovieController extends Controller
         ];
 
         $validator = Validator::make($request->all(), $rules);
-
         if($validator->fails())
         {
             return $this->APIMessage('E',$validator->errors()->messages());
-
-        }else{
+        }
+        else{
             $result = Movie::find($id);
 
-            if (!is_null($result)){
+            if (!is_null($result) && $result->removed == 'N'){
                 $result->title = $request->get('title') ? $request->get('title')  : $result->title;
                 $result->save();
+                return $this->APIMessage('U',$result,'Film');
             }
 
-            return $this->APIMessage('U',$result,'Film');
+            return $this->APIMessage('U',null,'Film');
         }
     }
 
