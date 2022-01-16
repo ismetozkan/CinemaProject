@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Traits\APIMessage;
 use App\Models\CinemaToMovie;
 use App\Models\User;
 use Illuminate\Auth\Events\Validated;
@@ -12,14 +13,14 @@ use Symfony\Component\HttpFoundation\Response;
 
 class UserController extends Controller
 {
+    use APIMessage;
 
-
-    public function read()
+    public function read(Request $request)
     {
-    
-        /*return view('booking', [
-            'users' => User::get()
-        ]);*/
+        return $this->APIMessage([
+            'code' => 200,
+            'message' => $request->route()->getName()
+        ]);
     }
 
     public function create(Request $request)

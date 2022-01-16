@@ -17,6 +17,12 @@ class CinemaToMovie extends Model
         'start',
         'end'
     ];
+    public function cinemas(){
+        return $this->hasOne(Cinema::class);
+    }
 
+    public function movies(){
+        return $this->hasOne(Movie::class);
+    }
 
 }

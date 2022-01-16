@@ -5,14 +5,25 @@ namespace App\Http\Controllers;
 use App\Http\Traits\APIMessage;
 use App\Models\Cinema;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Validator;
 
 class CinemaController extends Controller
 {
     use APIMessage;
-    public function read(){
-        $result = Cinema::all()->toArray();
-        return $this->APIMessage('R',$result,'Sinema Salonları');
+    public function read(Request $request){
+        $filter = $request->get('type');
+        $result = Cinema::all()
+            ->when($filter, function ($query, $filter) {
+                return $query->where('removed', $filter);
+            })->toArray();
+
+        return response()->json($this->APIMessage([
+            'code' => $result ? 200 : 400,
+            'message' => $request->route()->getName(),
+            'result' => $result
+        ]),$result ? 200 : 400);
+
     }
 
     public function create(Request $request){
@@ -25,28 +36,33 @@ class CinemaController extends Controller
 
         if($validator->fails())
         {
-            return $this->APIMessage('E',$validator->errors()->messages());
+            return response()->json($this->APIMessage([
+                'code' => 400,
+                'message' => 'validator.error',
+                'result' => $validator->errors()
+            ]),400);
         }else{
             $cinema = new Cinema();
             $result = $cinema::create([
                 'title' => $request->title,
                 'location' => $request->location
             ]);
-
-            return $this->APIMessage('C',$result,'Sinema Salonu');
+            return  $result ?
+                response()->json(
+                    $this->APIMessage([
+                        'code' => 201,
+                        'message' => $request->route()->getName(),
+                        'result' => $result
+                    ]),201) :
+                response()->json(
+                    $this->APIMessage([
+                        'code' => 400,
+                        'message' => $request->route()->getName()
+                    ],400)
+                );
         }
     }
 
-    public function delete($id){
-        $result = Cinema::find($id);
-
-        if (!is_null($result) && $result->removed == 'N'){
-            $result->removed = 'Y';
-            $result->save();
-            return $this->APIMessage('D',$result,'Sinema Salonu');
-        }
-        return $this->APIMessage('D',null,'Sinema Salonu');
-    }
 
     public function update(Request $request,$id){
         $rules = [
@@ -58,8 +74,11 @@ class CinemaController extends Controller
 
         if($validator->fails())
         {
-            return $this->APIMessage('E',$validator->errors()->messages());
-
+            return response()->json($this->APIMessage([
+                'code' => 400,
+                'message' => 'validator.error',
+                'result' => $validator->errors()
+            ]),400);
         }else{
             $result = Cinema::find($id);
 
@@ -67,15 +86,53 @@ class CinemaController extends Controller
                 $result->title = $request->get('title') ? $request->get('title')  : $result->title;
                 $result->location = $request->get('location') ? $request->get('location')  : $result->location;
                 $result->save();
-                return $this->APIMessage('U',$result,'Sinema Salonu');
+                return response()->json(
+                    $this->APIMessage([
+                        'code' => 200,
+                        'message' => $request->route()->getName(),
+                        'result' => $result
+                    ]),200);
             }
-
-        return $this->APIMessage('U',null,'Sinema Salonu');
+            return response()->json(
+                $this->APIMessage([
+                    'code' => 400,
+                    'message' => $request->route()->getName()
+                ]),400);
         }
     }
+    public function delete(Request $request,$id){
+        $result = Cinema::find($id);
 
-    public function show($id){
+        if (!is_null($result) && $result->removed == 'N'){
+            $result->removed = 'Y';
+            $result->save();
+            return response()->json(
+                $this->APIMessage([
+                    'code' => 200,
+                    'message' => $request->route()->getName(),
+                    'result' => $result
+                ]),200);
+        }
+        return response()->json(
+                $this->APIMessage([
+                    'code' => 400,
+                    'message' => $request->route()->getName()
+                ]),400);
+    }
+
+    public function show(Request $request,$id){
         $result = Cinema::where('id', $id)->where('removed','N')->get()->toArray();
-        return $this->APIMessage('R',$result,'Sinema Salonu');
+        return  $result ?
+            response()->json(
+                $this->APIMessage([
+                    'code' => 200,
+                    'message' => $request->route()->getName(),
+                    'result' => $result
+                ]),200) :
+            response()->json(
+                $this->APIMessage([
+                    'code' => 400,
+                    'message' => $request->route()->getName()
+                ]),400);
     }
 }

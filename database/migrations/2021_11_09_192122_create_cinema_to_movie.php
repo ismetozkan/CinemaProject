@@ -14,14 +14,14 @@ class CreateCinemaToMovie extends Migration
     public function up()
     {
         Schema::create('cinema_to_movie', function (Blueprint $table) {
-
+            $table->id();
             $table->unsignedBigInteger('cinema_id');
             $table->unsignedBigInteger('movie_id');
             $table->foreign("cinema_id")->references("id")->on("cinemas");
             $table->foreign("movie_id")->references("id")->on("movies");
             $table->date('start'); //YYYY-MM-DD
             $table->date('end'); //YYYY-MM-DD
-            $table->enum('showings',['Y','N','P'])->default('N'); //veri silinme işlemi gerçekleştirmediğimiz için silme işlemini bu kolon üzerinden yapıyoruz.
+            $table->enum('showings',['Y','N','P'])->default('Y'); //veri silinme işlemi gerçekleştirmediğimiz için silme işlemini bu kolon üzerinden yapıyoruz.
             $table->timestamps();
         });
     }

@@ -2,16 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Cinema;
+use App\Http\Traits\APIMessage;
 use App\Models\CinemaToMovie;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class CinemaToMovieController extends Controller
 {
+    use APIMessage;
     public function read(){
-        //return CinemaToMovie::get();
-        return CinemaToMovie::all()->where('showings','Y')->toArray();
+        $result = CinemaToMovie::all()->where('showings','Y')->toArray();
+        return $this->APIMessage('R',$result,'Sinema Salonu Film İlişkisi');
     }
 
     public function create(Request $request)
@@ -25,76 +26,64 @@ class CinemaToMovieController extends Controller
         $validator = Validator::make($request->all(), $rules);
         if($validator->fails())
         {
-            return response()->json([
-                'code' => 400,
-                'message' => 'Lütfen formu eksiksiz doldurun.',
-                'result' => $validator->errors()->messages()
-            ],400);
+            return $this->APIMessage('E',$validator->errors()->messages());
         }else{
-            $cinemaToMovie = new CinemaToMovie();
-            $result = $cinemaToMovie::create([
-                'cinema_id' => $request->cinema_id,
-                'movie_id' => $request->movie_id,
-                'start' => $request->start,
-                'end' => $request->end
-            ]);
-
-            if($result)
-            {
-                return response()->json([
-                    'code' => 200,
-                    'message' => [
-                        'route_name' => $request->route()->getName(),
-                        'code' => 200
-                    ],
-                    'result' => $result
+            try {
+                $cinemaToMovie = new CinemaToMovie();
+                $result = $cinemaToMovie::create([
+                    'cinema_id' => $request->cinema_id,
+                    'movie_id' => $request->movie_id,
+                    'start' => $request->start,
+                    'end' => $request->end
                 ]);
-            }else{
-                return response()->json([
-                    'code' => 400,
-                    'message' => [
-                        'route_name' => $request->route()->getName(),
-                        'code' => 400
-                    ]
-                ]);
+            }catch (\Exception $e){
+                return $this->APIMessage('E',$e->getMessage());
             }
+            return $this->APIMessage('C',$result,'Sinema Salonu Film İlişkisi');
         }
+    }
+
+    public function delete($id){
+        $result = CinemaToMovie::find($id);
+        if (!is_null($result) && $result->showings != 'N'){
+            $result->showings = 'N';
+            $result->save();
+            return $this->APIMessage('D',$result,'Sinema Salonu Film İlişkisi');
+        }
+        return $this->APIMessage('D',null,'Sinema Salonu Film İlişkisi');
     }
 
     public function update(Request $request, $id)
     {
-        $result = CinemaToMovie::where('id', $id)->update(['title' => $request->title]);
-        return response()->json([
-            'code' => $result ? '200' : '400',
-            'message' => [
-                'route_name' => $request->route()->getName(),
-                'code' => $result ? '200' : '400',
-            ],
-        ]);
+        $rules = [
+            'cinema_id' => 'nullable|integer',
+            'movie_id' => 'nullable|integer',
+            'start' => 'nullable|date',
+            'end' => 'nullable|date'
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+        if($validator->fails())
+        {
+            return $this->APIMessage('E',$validator->errors()->messages());
+
+        }else{
+        $result = CinemaToMovie::find( $id);
+        if (!is_null($result) && $result->removed != 'N'){
+            $result->cinema_id = $request->get('cinema_id') ? $request->get('cinema_id')  : $result->cinema_id;
+            $result->movie_id = $request->get('movie_id') ? $request->get('movie_id')  : $result->movie_id;
+            $result->start = $request->get('start') ? $request->get('start')  : $result->start;
+            $result->end = $request->get('end') ? $request->get('end')  : $result->end;
+            $result->save();
+
+            return $this->APIMessage('U',$result,'Sinema Salonu Film İlişkisi');
+        }
+        return $this->APIMessage('U',null,'Sinema Salonu Film İlişkisi');
+        }
     }
 
-/*
-    public function destroy(Request $request,$id)
-    {
-        $result = CinemaToMovie::where('id',$id)->delete();
-        return response()->json([
-            'code' => $result ? '200' : '400',
-            'message' => [
-                'route_name' => $request->route()->getName(),
-                'code' => $result ? '200' : '400',
-            ],
-        ]);
-    }
-*/
-    public function show(Request $request,$id){
-        $result = CinemaToMovie::where('id', $id)->get();
-        return response()->json([
-            'code' => $result->count() ? '200' : '400',
-            'message' => [
-                'result' => $result->count() ? $result : 'Görüntülenecek veri bulunmamaktadır.',
-                'route_name' => $request->route()->getName(),
-                'code' => $result->count() ? '200' : '400',
-            ],
-        ]);
+    public function show($id){
+        $result = CinemaToMovie::where('id', $id)->where('showings','Y')->get()->toArray();
+        return $this->APIMessage('R',$result,'Sinema Salonu Film İlişkisi');
     }
 }

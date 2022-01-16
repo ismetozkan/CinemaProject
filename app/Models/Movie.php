@@ -13,6 +13,8 @@ class Movie extends Model
         'title'
     ];
 
+
+
     /*
     public function details(){
         return $this->hasMany(MovieDetail::class);

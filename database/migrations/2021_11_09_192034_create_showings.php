@@ -20,7 +20,6 @@ class CreateShowings extends Migration
             $table->dateTime('show_date'); //Y-M-D H:M:S
             $table->enum('removed',['Y','N'])->default('N'); //veri silinme işlemi gerçekleştirmediğimiz için silme işlemini bu kolon üzerinden yapıyoruz.
             $table->timestamps();
-
             $table->foreign('movie_id')->references('id')->on('movies');
             $table->foreign('salon_id')->references('id')->on('salons');
         });
