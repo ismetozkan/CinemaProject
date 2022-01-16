@@ -1,9 +1,6 @@
 <?php
 
 namespace App\Http\Traits;
-use Illuminate\Http\Request;
-use Illuminate\Http\Response;
-use phpDocumentor\Reflection\DocBlock\Tags\Return_;
 
 trait APIMessage
 {
@@ -25,43 +22,43 @@ trait APIMessage
     }
 
     private function codes(array $config){
-        $result = [
-          'user.read' => [
-              200 => 'Giriş işlemi başarılı.',
-              400 => 'Beklenmedik bir hata ile karşılaşıldı. Lütfen tekrar deneyiniz'
-          ],
-            'register.create' => [
-                200 => 'Register işlemi başarılı.',
-                400 => 'Beklenmedik bir hata ile karşılaşıldı. Lütfen tekrar deneyiniz'
-            ],
-            'cinema.read' => [
-                200 => 'Cinema görüntüleme işlemi başarılı.',
-                400 => 'Görüntülenecek veri bulunamadı.'
-            ],
-            'cinema.create' => [
-                201 => 'Cinema oluşturma işlemi başarılı.',
-                400 => 'Beklenmedik bir hata ile karşılaşıldı. Lütfen tekrar deneyiniz.'
-            ],
-            'cinema.show' => [
-                200 => 'Cinema görüntüleme işlemi başarılı.',
-                400 => 'Görüntülenecek veri bulunamadı'
-            ],
-            'cinema.update' => [
-                200 => 'Cinema update işlemi başarılı.',
-                400 => 'Beklenmedik bir hata ile karşılaşıldı. Lütfen tekrar deneyiniz'
-            ],
-            'cinema.delete' => [
-                200 => 'Cinema silme işlemi başarılı.',
-                400 => 'Beklenmedik bir hata ile karşılaşıldı. Lütfen tekrar deneyiniz'
-            ],
-            'validator.error' => [
-                400 => 'Lütfen formunuzu eksiksiz bir biçimde doldurunuz'
-            ]
-
+        $route_name = explode('.',$config['message']);
+        $route = [
+            'cinema' => 'Sinema salonu',
+            'movies' => 'Film',
+            'salons' => 'Salon',
+            'cnmtomovie' => 'Sinema Film ilişkisi',
+            'showings' => 'Gösterim',
+            'seats' => 'Koltuk',
+            'tickets' => 'Bilet',
+            'user' => 'Kullanıcı'
         ];
-
-        return $result[$config['message']][$config['code']] ?? 'Tanımlanmamış route name';
-        //string yerine $config['message'] yazılabilir. o zaman direkt route adını yazar.
-
+        if($route_name[1] == 'create'){
+            $value = [
+                201 => $route[$route_name[0]] ." oluşturma işlemi başarılı",
+                400 => $route[$route_name[0]] .' oluşturma işlemi başarısız'
+            ];
+        }elseif($route_name[1] == 'update'){
+            $value = [
+                200 => $route[$route_name[0]] ." güncelleme işlemi başarılı",
+                400 => $route[$route_name[0]] .' güncelleme işlemi başarısız'
+            ];
+        }elseif($route_name[1] == 'read' || $route_name[1] == 'show'){
+            $value = [
+                200 => $route[$route_name[0]] . " gösterme işlemi başarılı",
+                400 => $route[$route_name[0]] . ' gösterme işlemi başarısız'
+            ];
+        }elseif($route_name[1] == 'delete'){
+            $value = [
+                200 => $route[$route_name[0]]." silme işlemi başarılı",
+                400 => $route[$route_name[0]] .' silme işlemi başarısız'
+            ];
+        }else{
+            $value = [
+                $config['code'] => $config['message']
+            ];
+        }
+        return  $value[$config['code']];
     }
+
 }

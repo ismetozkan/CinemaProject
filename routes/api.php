@@ -79,7 +79,7 @@ Route::prefix('tickets')->group(function (){
 
 
 
-Route::any('/login',[\App\Http\Controllers\UserController::class,'read'])->name('user.asd');
+Route::any('/login',[\App\Http\Controllers\UserController::class,'read'])->name('user.create');
 Route::any('/register',[\App\Http\Controllers\UserController::class,'read'])->name('register.create');
 
 Route::post('/logout',[LogoutController::class,'destroy'])->name('logout');

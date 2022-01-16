@@ -38,7 +38,7 @@ class CinemaController extends Controller
         {
             return response()->json($this->APIMessage([
                 'code' => 400,
-                'message' => 'validator.error',
+                'message' => 'Formu eksiksiz bir şekilde doldurunuz.',
                 'result' => $validator->errors()
             ]),400);
         }else{
@@ -76,14 +76,14 @@ class CinemaController extends Controller
         {
             return response()->json($this->APIMessage([
                 'code' => 400,
-                'message' => 'validator.error',
+                'message' => 'Formu eksiksiz bir şekilde doldurunuz.',
                 'result' => $validator->errors()
             ]),400);
         }else{
             $result = Cinema::find($id);
 
             if (!is_null($result) && $result->removed == 'N'){
-                $result->title = $request->get('title') ? $request->get('title')  : $result->title;
+                $result->title = $request->get('title') ?? $result->title;
                 $result->location = $request->get('location') ? $request->get('location')  : $result->location;
                 $result->save();
                 return response()->json(
