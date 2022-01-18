@@ -15,12 +15,19 @@ class UserController extends Controller
 {
     use APIMessage;
 
-    public function read(Request $request)
-    {
-        return $this->APIMessage([
-            'code' => 200,
-            'message' => $request->route()->getName()
-        ]);
+    public function read(Request $request){
+        $filter = $request->get('type');
+        $result = User::all()
+            ->when($filter, function ($query, $filter) {
+                return $query->where('removed', $filter);
+            })->toArray();
+
+        return response()->json($this->APIMessage([
+            'code' => $result ? 200 : 400,
+            'message' => $request->route()->getName(),
+            'result' => $result
+        ]),$result ? 200 : 400);
+
     }
 
     public function create(Request $request)
@@ -28,15 +35,16 @@ class UserController extends Controller
         $rules = [
             'name' => 'required|string',
             'email' => 'required|string',
-            'password' => 'required|date',
+            'password' => 'required|string',
         ];
 
         $validator = Validator::make($request->all(), $rules);
         if ($validator->fails()) {
-            return response()->json([
+            return response()->json($this->APIMessage([
                 'code' => 400,
-                'message' => $validator->errors()->messages()
-            ], Response::HTTP_BAD_REQUEST );
+                'message' => 'Formu eksiksiz bir şekilde doldurunuz.',
+                'result' => $validator->errors()
+            ]),400);
         } else {
             $result = User::create([
                 'name' => $request->name,
@@ -44,14 +52,19 @@ class UserController extends Controller
                 'password' => $request->password,
             ]);
 
-            return response()->json([
-                'code' => $result ? '200' : '400',
-                'message' => $result
-                    ? 'Başarılı'
-                    : 'Başarısız',
-            ], $result
-                ? '200'
-                : '400');
+            return  $result ?
+                response()->json(
+                    $this->APIMessage([
+                        'code' => 201,
+                        'message' => $request->route()->getName(),
+                        'result' => $result
+                    ]),201) :
+                response()->json(
+                    $this->APIMessage([
+                        'code' => 400,
+                        'message' => $request->route()->getName()
+                    ],400)
+                );
         }
     }
 

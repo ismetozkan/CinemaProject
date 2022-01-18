@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Validator;
 class CinemaController extends Controller
 {
     use APIMessage;
+
     public function read(Request $request){
         $filter = $request->get('type');
         $result = Cinema::all()

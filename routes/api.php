@@ -1,8 +1,5 @@
 <?php
 
-use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\Auth\LogoutController;
-use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\CinemaController;
 use App\Http\Controllers\CinemaToMovieController;
 use App\Http\Controllers\MovieController;
@@ -10,6 +7,7 @@ use App\Http\Controllers\SalonController;
 use App\Http\Controllers\SeatController;
 use App\Http\Controllers\ShowingController;
 use App\Http\Controllers\TicketController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 /*
 |--------------------------------------------------------------------------
@@ -22,6 +20,14 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+Route::prefix('user')->group(function (){
+    Route::any('/', [UserController::class,'read'])->name('user.read');
+    Route::any('create', [UserController::class,'create'])->name('user.create');
+    Route::any('show/{id}', [UserController::class,'show'])->name('user.show');
+    Route::any('update/{id}', [UserController::class,'update'])->name('user.update');
+    Route::any('delete/{id}', [UserController::class,'delete'])->name('user.delete');
+});
+
 Route::prefix('cinemas')->group(function (){
     Route::any('/', [CinemaController::class,'read'])->name('cinema.read');
     Route::any('create', [CinemaController::class,'create'])->name('cinema.create');
@@ -29,6 +35,7 @@ Route::prefix('cinemas')->group(function (){
     Route::any('update/{id}', [CinemaController::class,'update'])->name('cinema.update');
     Route::any('delete/{id}', [CinemaController::class,'delete'])->name('cinema.delete'); // parent olduğu için silme yapmak için onDelete cascade vs?
 });
+
 
 Route::prefix('salons')->group(function (){
     Route::any('/', [SalonController::class,'read'])->name('salon.read');
@@ -79,10 +86,10 @@ Route::prefix('tickets')->group(function (){
 
 
 
-Route::any('/login',[\App\Http\Controllers\UserController::class,'read'])->name('user.create');
-Route::any('/register',[\App\Http\Controllers\UserController::class,'read'])->name('register.create');
-
-Route::post('/logout',[LogoutController::class,'destroy'])->name('logout');
-
-Route::get('/register',[RegisterController::class,'read'])->name('register');
-Route::post('/register',[RegisterController::class,'create'])->name('registerstr');
+//  Route::any('/login',[\App\Http\Controllers\UserController::class,'read'])->name('user.create');
+//  Route::any('/register',[\App\Http\Controllers\UserController::class,'read'])->name('register.create');
+//
+//  Route::post('/logout',[LogoutController::class,'destroy'])->name('logout');
+//
+//  Route::get('/register',[RegisterController::class,'read'])->name('register');
+//  Route::post('/register',[RegisterController::class,'create'])->name('registerstr');

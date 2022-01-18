@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Traits\APIMessage;
 use App\Models\Salon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -9,8 +10,20 @@ use Illuminate\Support\Facades\Validator;
 
 class SalonController extends Controller
 {
-    public function read(){
-        return Salon::all()->where('removed','N');
+    use APIMessage;
+
+    public function read(Request $request){
+        $filter = $request->get('type');
+        $result = Salon::all()
+            ->when($filter, function ($query, $filter) {
+                return $query->where('removed', $filter);
+            })->toArray();
+
+        return response()->json($this->APIMessage([
+            'code' => $result ? 200 : 400,
+            'message' => $request->route()->getName(),
+            'result' => $result
+        ]),$result ? 200 : 400);
     }
 
 
@@ -24,11 +37,11 @@ class SalonController extends Controller
 
         if($validator->fails())
         {
-            return response()->json([
+            return response()->json($this->APIMessage([
                 'code' => 400,
-                'message' => 'Lütfen formu eksiksiz doldurun.',
-                'result' => $validator->errors()->messages()
-            ]);
+                'message' => 'Formu eksiksiz bir şekilde doldurunuz.',
+                'result' => $validator->errors()
+            ]),400);
         }else{
 
             $salon = new Salon();
@@ -39,27 +52,22 @@ class SalonController extends Controller
             ]);
 
 
-            if($result)
-            {
-                return response()->json([
-                    'code' => 200,
-                    'message' => [
-                        'route_name' => $request->route()->getName(),
-                        'code' => 200
-                    ],
-                    'result' => $result
-                ]);
-            }else{
-                return response()->json([
-                    'code' => 400,
-                    'message' => [
-                        'route_name' => $request->route()->getName(),
-                        'code' => 400
-                    ]
-                ]);
+            return  $result ?
+                response()->json(
+                    $this->APIMessage([
+                        'code' => 201,
+                        'message' => $request->route()->getName(),
+                        'result' => $result
+                    ]),201) :
+                response()->json(
+                    $this->APIMessage([
+                        'code' => 400,
+                        'message' => $request->route()->getName()
+                    ],400)
+                );
             }
         }
-    }
+
 
     public function delete(Request $request,$id){
         $result = Salon::where('id', $id)->update([
@@ -87,14 +95,11 @@ class SalonController extends Controller
 
     public function show(Request $request,$id){
         $result = Salon::where('id', $id)->get();
-        return response()->json([
-            'code' => $result->count() ? '200' : '400',
-            'message' => [
-                'result' => $result->count() ? $result : 'Görüntülenecek veri bulunmamaktadır.',
-                'route_name' => $request->route()->getName(),
-                'code' => $result->count() ? '200' : '400',
-            ],
-        ]);
+        return response()->json($this->APIMessage([
+            'code' => $result ? 200 : 400,
+            'message' => $request->route()->getName(),
+            'result' => $result
+        ]),$result ? 200 : 400);
     }
 }
 

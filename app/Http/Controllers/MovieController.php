@@ -11,9 +11,18 @@ class MovieController extends Controller
 {
     use APIMessage;
 
-    public function read(){
-        $result = Movie::all()->toArray();
-        return $this->APIMessage('R',$result,'Filmler');
+    public function read(Request $request){
+        $filter = $request->get('type');
+        $result = Movie::all()
+            ->when($filter, function ($query, $filter) {
+                return $query->where('removed', $filter);
+            })->toArray();
+
+        return response()->json($this->APIMessage([
+            'code' => $result ? 200 : 400,
+            'message' => $request->route()->getName(),
+            'result' => $result
+        ]),$result ? 200 : 400);
     }
 
     public function create(Request $request)
@@ -24,27 +33,52 @@ class MovieController extends Controller
         $validator = Validator::make($request->all(), $rules);
         if($validator->fails())
         {
-            return $this->APIMessage('E',$validator->errors()->messages());
+            return response()->json($this->APIMessage([
+                'code' => 400,
+                'message' => 'Formu eksiksiz bir şekilde doldurunuz.',
+                'result' => $validator->errors()
+            ]),400);
         }else{
             $movie = new Movie();
             $result = $movie::create([
                 'title' => $request->title
             ]);
-            return $this->APIMessage('C',$result,'Film');
+            return  $result ?
+                response()->json(
+                    $this->APIMessage([
+                        'code' => 201,
+                        'message' => $request->route()->getName(),
+                        'result' => $result
+                    ]),201) :
+                response()->json(
+                    $this->APIMessage([
+                        'code' => 400,
+                        'message' => $request->route()->getName()
+                    ],400)
+                );
         }
     }
 
-    public function delete($id)
+    public function delete(Request $request,$id)
     {
         $result = Movie::find($id);
 
         if (!is_null($result) && $result->removed == 'N'){
             $result->removed = 'Y';
             $result->save();
-            return $this->APIMessage('D',$result,'Film');
+            return response()->json(
+                $this->APIMessage([
+                    'code' => 200,
+                    'message' => $request->route()->getName(),
+                    'result' => $result
+                ]),200);
         }
 
-        return $this->APIMessage('D',null,'Film');
+        return response()->json(
+            $this->APIMessage([
+                'code' => 400,
+                'message' => $request->route()->getName()
+            ]),400);
     }
 
     public function update(Request $request, $id)
@@ -57,7 +91,11 @@ class MovieController extends Controller
         $validator = Validator::make($request->all(), $rules);
         if($validator->fails())
         {
-            return $this->APIMessage('E',$validator->errors()->messages());
+            return response()->json($this->APIMessage([
+                'code' => 400,
+                'message' => 'Formu eksiksiz bir şekilde doldurunuz.',
+                'result' => $validator->errors()
+            ]),400);
         }
         else{
             $result = Movie::find($id);
@@ -72,9 +110,20 @@ class MovieController extends Controller
         }
     }
 
-    public function show($id)
+    public function show(Request $request,$id)
     {
         $result = Movie::where('id', $id)->where('removed','N')->get()->toArray();
-        return $this->APIMessage('R',$result,'Film');
+        return  $result ?
+            response()->json(
+                $this->APIMessage([
+                    'code' => 200,
+                    'message' => $request->route()->getName(),
+                    'result' => $result
+                ]),200) :
+            response()->json(
+                $this->APIMessage([
+                    'code' => 400,
+                    'message' => $request->route()->getName()
+                ]),400);
     }
 }

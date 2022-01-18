@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Traits\APIMessage;
 use App\Models\Showing;
 use App\Models\Ticket;
 use Dflydev\DotAccessData\Data;
@@ -10,8 +11,19 @@ use Illuminate\Support\Facades\Validator;
 
 class TicketController extends Controller
 {
-    public function read(){
-        return Ticket::all()->where('removed','N');
+    use APIMessage;
+    public function read(Request $request){
+        $filter = $request->get('type');
+        $result = Ticket::all()
+            ->when($filter, function ($query, $filter) {
+                return $query->where('removed', $filter);
+            })->toArray();
+
+        return response()->json($this->APIMessage([
+            'code' => $result ? 200 : 400,
+            'message' => $request->route()->getName(),
+            'result' => $result
+        ]),$result ? 200 : 400);
     }
 
     public function create(Request $request){
@@ -29,11 +41,11 @@ class TicketController extends Controller
         $validator = Validator::make($request->all(), $rules);
         if($validator->fails())
         {
-            return response()->json([
+            return response()->json($this->APIMessage([
                 'code' => 400,
-                'message' => 'Lütfen formu eksiksiz doldurun.',
-                'result' => $validator->errors()->messages()
-            ]);
+                'message' => 'Formu eksiksiz bir şekilde doldurunuz.',
+                'result' => $validator->errors()
+            ]),400);
         }else{
             $ticket = new Ticket();
             $result = $ticket::create([
@@ -47,25 +59,19 @@ class TicketController extends Controller
                 'payment_method' => $request->payment_method
             ]);
 
-            if($result)
-            {
-                return response()->json([
-                    'code' => 200,
-                    'message' => [
-                        'route_name' => $request->route()->getName(),
-                        'code' => 200
-                    ],
-                    'result' => $result
-                ]);
-            }else{
-                return response()->json([
-                    'code' => 400,
-                    'message' => [
-                        'route_name' => $request->route()->getName(),
-                        'code' => 400
-                    ]
-                ]);
-            }
+            return  $result ?
+                response()->json(
+                    $this->APIMessage([
+                        'code' => 201,
+                        'message' => $request->route()->getName(),
+                        'result' => $result
+                    ]),201) :
+                response()->json(
+                    $this->APIMessage([
+                        'code' => 400,
+                        'message' => $request->route()->getName()
+                    ],400)
+                );
         }
     }
 
@@ -87,24 +93,19 @@ class TicketController extends Controller
 
     public function show(Request $request,$id){
         $result = Ticket::where('id', $id)->get();
-        return response()->json([
-            'code' => $result->count() ? '200' : '400',
-            'message' => [
-                'result' => $result->count() ? $result : 'Görüntülenecek veri bulunmamaktadır.',
-                'route_name' => $request->route()->getName(),
-                'code' => $result->count() ? '200' : '400',
-            ],
-        ]);
+        return response()->json($this->APIMessage([
+            'code' => $result ? 200 : 400,
+            'message' => $request->route()->getName(),
+            'result' => $result
+        ]),$result ? 200 : 400);
     }
 
     public function update(Request $request,$id){
         $result = Ticket::where('id', $id)->update($request->all());
-        return response()->json([
-            'code' => $result ? '200' : '400',
-            'message' => [
-                'route_name' => $request->route()->getName(),
-                'code' => $result ? '200' : '400',
-            ],
-        ]);
+        return response()->json($this->APIMessage([
+            'code' => $result ? 200 : 400,
+            'message' => $request->route()->getName(),
+            'result' => $result
+        ]),$result ? 200 : 400);
     }
 }

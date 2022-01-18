@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Traits\APIMessage;
 use App\Models\Salon;
 use App\Models\Seat;
 use Illuminate\Http\Request;
@@ -9,8 +10,20 @@ use Illuminate\Support\Facades\Validator;
 
 class SeatController extends Controller
 {
-    public function read(){
-        return Salon::all()->where('removed','N');
+    use APIMessage;
+
+    public function read(Request $request){
+        $filter = $request->get('type');
+        $result = Seat::all()
+            ->when($filter, function ($query, $filter) {
+                return $query->where('removed', $filter);
+            })->toArray();
+
+        return response()->json($this->APIMessage([
+            'code' => $result ? 200 : 400,
+            'message' => $request->route()->getName(),
+            'result' => $result
+        ]),$result ? 200 : 400);
     }
 
     public function create(Request $request){
@@ -23,11 +36,11 @@ class SeatController extends Controller
 
         if($validator->fails())
         {
-            return response()->json([
+            return response()->json($this->APIMessage([
                 'code' => 400,
-                'message' => 'Lütfen formu eksiksiz doldurun.',
-                'result' => $validator->errors()->messages()
-            ]);
+                'message' => 'Formu eksiksiz bir şekilde doldurunuz.',
+                'result' => $validator->errors()
+            ]),400);
         }else{
             $seat = new Seat();
             $result = $seat::create([
@@ -36,25 +49,19 @@ class SeatController extends Controller
                 'salon_id' => $request->salon_id
             ]);
 
-            if($result)
-            {
-                return response()->json([
-                    'code' => 200,
-                    'message' => [
-                        'route_name' => $request->route()->getName(),
-                        'code' => 200
-                    ],
-                    'result' => $result
-                ]);
-            }else{
-                return response()->json([
-                    'code' => 400,
-                    'message' => [
-                        'route_name' => $request->route()->getName(),
-                        'code' => 400
-                    ]
-                ]);
-            }
+            return  $result ?
+                response()->json(
+                    $this->APIMessage([
+                        'code' => 201,
+                        'message' => $request->route()->getName(),
+                        'result' => $result
+                    ]),201) :
+                response()->json(
+                    $this->APIMessage([
+                        'code' => 400,
+                        'message' => $request->route()->getName()
+                    ],400)
+                );
         }
     }
 
@@ -83,13 +90,11 @@ class SeatController extends Controller
 
     public function show(Request $request,$id){
         $result = Seat::where('id', $id)->get();
-        return response()->json([
-            'code' => $result->count()  ? '200' : '400',
-            'message' => [
-                'result' => $result->count() ? $result : 'Görüntülenecek veri bulunmamaktadır.',
-                'route_name' => $request->route()->getName(),
-                'code' => $result->count()  ? '200' : '400',
-            ],
-        ]);
+
+        return response()->json($this->APIMessage([
+            'code' => $result ? 200 : 400,
+            'message' => $request->route()->getName(),
+            'result' => $result
+        ]),$result ? 200 : 400);
     }
 }
