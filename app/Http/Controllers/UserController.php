@@ -77,7 +77,7 @@ class UserController extends Controller
 
     public function login(Request $request)
     {
-        $auth = User::all()->where('email',$request->get('email'))->where('where',$request->get('password'));
+        $auth = User::all()->where('email',$request->get('email'))->where('password',$request->get('password'));
 
         return $auth->count() > 0
             ? response()->json([
